@@ -1,0 +1,11 @@
+strong barn barn barni barns börn börn börnum barna 10 
+strong hundrað hundrað hundraði hundraðs hundruð hundruð hundruðum hundraða 10 
+strong hérað hérað héraði héraðs héruð héruð héruðum héraða 10
+strong veður veður veðri veðurs veður veður veðrum veðra 11 
+strong sumar sumar sumri sumars sumur sumur sumrum sumra 11
+strong epli epli epli eplis epli epli eplum epla 12 
+strong tré tré tré trés tré tré trjám trjáa 12 
+strong ríki ríki ríki ríkis ríki ríki ríkjum ríkja 12
+weak hjarta hjarta hjarta hjarta hjörtu hjörtu hjörtum hjartna 13
+weak auga auga auga auga augu augu augum augna 13
+weak lunga lunga lunga lunga lungu lungu lungum lungna 13

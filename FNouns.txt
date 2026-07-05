@@ -1,0 +1,15 @@
+strong gjöf gjöf gjöf gjafar gjafir gjafir gjöfum gjafa 5 
+strong mynd mynd mynd myndar myndir myndir myndum mynda 5
+strong pöntun pöntun pöntun pöntunar pantanir pantanir pöntunum pantana 5 
+strong skemmtun skemmtun skemmtun skemmtunar skemmtanir skemmtanir skemmtunum skemmtana 5 
+strong kinn kinn kinn kinnar kinnar kinnar kinnum kinna 6 
+strong bygging byggingu byggingu byggingar byggingar byggingar byggingum bygginga 6 
+strong rigning rigningu rigningu rigningar rigningar rigningar rigningum rigninga 6
+strong sæng sæng sæng sængur sængur sængur sængum sænga 7 
+strong önd önd önd andar endur endur öndum anda 7 
+strong bók bók bók bókar bækur bækur bókum bóka 7
+strong á á á ár ár ár ám áa 8 
+strong brú brú brú brúar brýr brýr brúm brúa 8 
+weak saga sögu sögu sögu sögur sögur sögum sagna 9 
+weak kirkja kirkju kirkju kirkju kirkjur kirkjur kirkjum kirkna 9 
+weak lygi lygi lygi lygi lygar lygar lygum lyga 9

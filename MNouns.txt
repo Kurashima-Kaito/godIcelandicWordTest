@@ -1,0 +1,12 @@
+strong hattur hatt hatti hatts hattar hatta hattum hatta 1
+strong læknir lækni lækni læknis læknar lækna læknum lækna 1
+strong bíll bíl bíl bíls bílar bíla bílum bíla 2
+strong jökull jökul jökli jökuls jöklar jökla jöklum jökla 2
+strong steinn stein steini steins steinar steina steinum steina 2
+strong staður stað stað staðar staðir staði staðum staða 3
+strong mánuður mánuð mánuði mánaðar mánuðir mánuði mánuðum mánaða 3
+strong vegur veg vegi vegar vegir vegi vegum vega 3
+weak skóli skóla skóla skóla skólar skóla skólum skóla 4
+weak gluggi glugga glugga glugga gluggar glugga gluggum glugga 4
+weak nemandi nemanda nemanda nemanda nemendur nemendur nemendum nemenda 4
+weak bóndi bónda bónda bónda bændur bændur bændum bænda 4

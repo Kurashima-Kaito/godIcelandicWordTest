@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>アイスランド語 活用クイズ</title>
+  <style>
+    /* 画面全体のスタイルリセット */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #141414;
+      font-family: 'CustomFont', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #canvasContainer {
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      background-color: #141414;
+    }
+
+    /* p5.jsのcreateElement("textArea")を通常のHTML/CSSで最適化 */
+    #answerInput {
+      position: absolute;
+      box-sizing: border-box;
+      background-color: #404040;
+      color: #FFFFFF;
+      font-size: 2rem;
+      padding: 10px;
+      border: none;
+      outline: none;
+      resize: none;
+      -webkit-appearance: none;
+      display: none; /* 初期状態（タイトル）では非表示 */
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvasContainer">
+  <canvas id="gameCanvas"></canvas>
+  <textarea id="answerInput"></textarea>
+</div>
+
+<script>
+// --- グローバル変数 ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const inputElt = document.getElementById('answerInput');
+
+let mouseClicking = false;
+let x = 0, y = 0;
+let phase = 0;
+let currentQues;
+let currentGender = 0;
+let caseRand = 1;
+let prevAnswer = "", prevUserAnswer = "", prevImg = 0;
+let images = [];
+
+let MNouns = [];
+let NNouns = [];
+let FNouns = [];
+
+const casesName = ["単数主格", "単数対格", "単数与格", "単数属格", "複数主格", "複数対格", "複数与格", "複数属格"];
+const MArticles = ["inn", "inn", "num", "ins",   "nir", "na",  "num", "nna"];
+const NArticles = ["ið",  "ið",  "inn", "ins",   "in",  "in",  "num", "nna"];
+const FArticles = ["in",  "ina", "inni","innar", "nar", "nar", "num", "nna"];
+const vowels = ["a", "e", "i", "y", "o", "ö", "æ", "u", "á", "é", "í", "ý", "ó", "ú"];
+
+// --- ユーティリティ関数（p5.jsの代替） ---
+async function loadStrings(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  return text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+}
+
+function loadImage(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null); // エラー時も進行を止めない
+    img.src = url;
+  });
+}
+
+function resizeCanvas() {
+  const w = window.innerWidth;
+  const h = Math.min(w * 1.2, window.innerHeight);
+  canvas.width = w - 5;
+  canvas.height = h - 5;
+
+  // 入力エリアのサイズ同期
+  inputElt.style.width = (canvas.width - 60) + 'px';
+  inputElt.style.height = (canvas.height * 0.15) + 'px';
+}
+
+// --- 初期化処理 ---
+async function setup() {
+  resizeCanvas();
+
+  // 1. フォントのロード
+  try {
+    const font = new FontFace('CustomFont', 'url(SemiBold.ttf)');
+    await font.load();
+    document.fonts.add(font);
+  } catch (e) {
+    console.warn("フォントの読み込みに失敗しました。標準フォントを使用します。");
+  }
+
+  // 2. 画像の非同期ロード
+  for (let i = 1; i <= 14; i++) {
+    images.push(await loadImage(i + ".webp"));
+  }
+
+  // 3. テキストデータのロードとパース
+  // 【バグ修正】NNounsTemp と FNounsTemp が MNounsTemp を参照していたクリティカルなミスを修正
+  try {
+    let MNounsTemp = await loadStrings("MNouns.txt");
+    for (let i = 0; i < MNounsTemp.length; i++) {
+      let MN = MNounsTemp[i].split(" ");
+      MNouns[i] = [MN[0], MN[1], MN[2], MN[3], MN[4], MN[5], MN[6], MN[7], MN[8], parseInt(MN[9])];
+    }
+
+    let NNounsTemp = await loadStrings("NNouns.txt");
+    for (let i = 0; i < NNounsTemp.length; i++) {
+      let NN = NNounsTemp[i].split(" "); 
+      NNouns[i] = [NN[0], NN[1], NN[2], NN[3], NN[4], NN[5], NN[6], NN[7], NN[8], parseInt(NN[9])];
+    }
+
+    let FNounsTemp = await loadStrings("FNouns.txt");
+    for (let i = 0; i < FNounsTemp.length; i++) {
+      let FN = FNounsTemp[i].split(" "); 
+      FNouns[i] = [FN[0], FN[1], FN[2], FN[3], FN[4], FN[5], FN[6], FN[7], FN[8], parseInt(FN[9])];
+    }
+  } catch (e) {
+    console.error("テキストデータの読み込みエラー:", e);
+  }
+
+  // イベントリスナーの登録
+  window.addEventListener('resize', resizeCanvas);
+  setupControls();
+
+  // ループ開始
+  loop();
+}
+
+// --- メインループ ---
+function loop() {
+  // 背景クリア
+  ctx.fillStyle = "#141414";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  switch (phase) {
+    case 0:
+      title();
+      break;
+    case 1:
+      game1();
+      break;
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// --- 各画面の描画処理 ---
+function title() {
+  inputElt.style.display = "none";
+
+  ctx.save();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "40px CustomFont";
+  combinedText("Apprenons\nfrançaises\nconjugaisons.", canvas.height * 0.1, 10);
+
+  if (showButton(canvas.width / 2, canvas.height * 0.68, canvas.width * 0.5, canvas.height * 0.1)) {
+    nextQues();
+    phase = 1;
+  }
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "30px CustomFont";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Commence", canvas.width / 2, canvas.height * 0.68);
+  ctx.restore();
+}
+
+function game1() {
+  ctx.save();
+  
+  // テキストエリアの位置をキャンバス内に同期
+  inputElt.style.display = "block";
+  inputElt.style.left = "30px";
+  inputElt.style.top = (canvas.height * 0.8) + "px";
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "35px CustomFont";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  
+  ctx.fillText("Qui est-ce", canvas.width / 2, canvas.height * 0.1);
+
+  if (currentQues) {
+    let genderStr = currentGender === 0 ? "kk" : (currentGender === 1 ? "kvk" : "hk");
+    let typeStr = currentQues[0] === "weak" ? "vb " : "sb ";
+    ctx.fillText(genderStr + typeStr + currentQues[1] + " -s", canvas.width / 2, canvas.height * 0.2);
+    ctx.fillText(casesName[caseRand] + " 既知形 ?", canvas.width / 2, canvas.height * 0.3);
+  }
+
+  ctx.textAlign = "left";
+  ctx.font = "24px CustomFont";
+  ctx.fillText("La Solution: " + prevAnswer, 10, canvas.height * 0.5);
+  ctx.fillText("La Réponse: " + prevUserAnswer, 10, canvas.height * 0.6);
+
+  // 【バグ修正】正誤判定の表示文言とカラーの論理逆転を修正
+  if (prevAnswer !== "") {
+    if (prevAnswer === prevUserAnswer) {
+      ctx.fillStyle = "#96E77F"; // 緑
+      ctx.fillText("La Situation: Correct", 10, canvas.height * 0.7);
+    } else {
+      ctx.fillStyle = "#E77F7F"; // 赤
+      ctx.fillText("La Situation: Mauvais", 10, canvas.height * 0.7);
+    }
+  }
+
+  // テキストエリアの入力監視（エンターキー判定）
+  if (inputElt.value.indexOf("\n") !== -1) {
+    let inputStr = inputElt.value.toLowerCase().replaceAll("\n", "");
+
+    let articles = [];
+    switch (currentGender) {
+      case 0: articles = MArticles; break;
+      case 1: articles = FArticles; break;
+      case 2: articles = NArticles; break;
+    }
+    
+    if (currentQues) {
+      prevAnswer = currentQues[caseRand + 1];
+
+      let isSyncope = false;
+      if (vowels.includes(prevAnswer[prevAnswer.length - 1])) {
+        if (vowels.includes(articles[caseRand][0])) {
+          isSyncope = true;
+        }
+      }
+
+      if (isSyncope) {
+        prevAnswer += articles[caseRand].slice(1);
+      } else {
+        if (caseRand === 6) {
+          prevAnswer = prevAnswer.slice(0, prevAnswer.length - 1) + articles[caseRand];
+        } else {
+          prevAnswer += articles[caseRand];
+        }
+      }
+
+      prevImg = currentQues[9] - 1;
+      prevUserAnswer = inputStr;
+      nextQues();
+    }
+
+    inputElt.value = "";
+  }
+
+  // 画像表示ボタンの処理
+  if (currentQues && showButton(canvas.width * 0.15, canvas.height * 0.03, canvas.width * 0.25, canvas.height * 0.05)) {
+    let imgIdx = currentQues[9] - 1;
+    if (images[imgIdx]) {
+      ctx.drawImage(images[imgIdx], canvas.width * 0.05, canvas.height * 0.35, canvas.width * 0.9, canvas.height * 0.4);
+    }
+  }
+  if (showButton(canvas.width * 0.15, canvas.height * 0.09, canvas.width * 0.25, canvas.height * 0.05)) {
+    if (images[13]) {
+      ctx.drawImage(images[13], canvas.width * 0.05, canvas.height * 0.35, canvas.width * 0.9, canvas.height * 0.4);
+    }
+  }
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "16px CustomFont";
+  ctx.fillText("Bending", canvas.width * 0.15, canvas.height * 0.03);
+
+  ctx.restore();
+}
+
+function nextQues() {
+  currentGender = Math.floor(Math.random() * 3);
+
+  switch (currentGender) {
+    case 0:
+      if (MNouns.length > 0) currentQues = MNouns[Math.floor(Math.random() * MNouns.length)];
+      break;
+    case 1:
+      if (FNouns.length > 0) currentQues = FNouns[Math.floor(Math.random() * FNouns.length)];
+      break;
+    case 2:
+      if (NNouns.length > 0) currentQues = NNouns[Math.floor(Math.random() * NNouns.length)];
+      break;
+  }
+  caseRand = Math.floor(Math.random() * 7) + 1; // 1～7のランダム
+}
+
+// --- UI・インタラクションシステム ---
+function combinedText(txt, th_y, space, underlined = -1) {
+  const lines = txt.split("\n");
+  const fontSize = 40; 
+
+  lines.forEach((line, ln) => {
+    let letterSizes = [];
+    let txtWidth = 0;
+    let y_ = th_y + ln * 1.2 * fontSize;
+
+    for (let i = 0; i < line.length; i++) {
+      let w = ctx.measureText(line[i]).width;
+      letterSizes.push(w);
+      txtWidth += w;
+    }
+
+    let letterSpace = (canvas.width - txtWidth - space * 2) / (letterSizes.length - 1);
+    if (letterSizes.length <= 1) letterSpace = 0;
+
+    ctx.save();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+
+    let cumulativeX = 0;
+    for (let i = 0; i < letterSizes.length; i++) {
+      if (i === underlined) {
+        ctx.strokeStyle = "#FF0000";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(space + cumulativeX, y_ + fontSize);
+        ctx.lineTo(space + cumulativeX + letterSizes[i], y_ + fontSize);
+        ctx.stroke();
+      }
+
+      ctx.fillText(line[i], space + cumulativeX, y_);
+      cumulativeX += letterSizes[i] + letterSpace;
+    }
+    ctx.restore();
+  });
+}
+
+function showButton(centerX, centerY, ax = 150, ay = 50) {
+  let lx = centerX - ax / 2;
+  let ly = centerY - ay / 2;
+  let margin = 5;
+
+  let isHover = collision(lx, ly, lx + ax, ly + ay);
+
+  ctx.save();
+  if (isHover) {
+    ctx.fillStyle = "#505050"; 
+    ctx.fillRect(lx, ly, ax, ay);
+    ctx.fillStyle = "#141414"; 
+    ctx.fillRect(lx + margin, ly + margin, ax - margin * 2, ay - margin * 2);
+
+    if (mouseClicking) {
+      ctx.restore();
+      return true;
+    }
+  } else {
+    ctx.fillStyle = "#646464"; 
+    ctx.fillRect(lx, ly, ax, ay);
+    ctx.fillStyle = "#282828"; 
+    ctx.fillRect(lx + margin, ly + margin, ax - margin * 2, ay - margin * 2);
+  }
+  ctx.restore();
+  return false;
+}
+
+function collision(x_, y_, x2_, y2_) {
+  return (x_ < x && x < x2_ && y_ < y && y < y2_);
+}
+
+// --- マウス・タッチイベント制御の最適化 ---
+function setupControls() {
+  function updateCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches && e.touches.length > 0) {
+      x = e.touches[0].clientX - rect.left;
+      y = e.touches[0].clientY - rect.top;
+    } else {
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
+    }
+  }
+
+  window.addEventListener('mousedown', (e) => { mouseClicking = true; updateCoords(e); });
+  window.addEventListener('mouseup', () => { mouseClicking = false; });
+  window.addEventListener('mousemove', updateCoords);
+
+  window.addEventListener('touchstart', (e) => { mouseClicking = true; updateCoords(e); }, { passive: true });
+  window.addEventListener('touchend', () => { mouseClicking = false; });
+  window.addEventListener('touchmove', (e) => { updateCoords(e); }, { passive: true });
+}
+
+// アプリケーションの起動
+window.onload = setup;
+</script>
+</body>
+</html>
